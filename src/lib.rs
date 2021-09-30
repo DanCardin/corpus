@@ -8,8 +8,11 @@ pub use crate::root::RootLocation;
 
 #[derive(thiserror::Error, Debug)]
 pub enum CorpusError {
-    #[error("There is no home-dir")]
+    #[error("There is no home directory")]
     NoHomeDir,
+
+    #[error("Current directory does not exist or insufficient permissions")]
+    InvalidCurrentDir,
 }
 
 pub fn builder() -> CorpusBuilder {
@@ -18,6 +21,17 @@ pub fn builder() -> CorpusBuilder {
 
 #[cfg(test)]
 mod tests {
+    mod corpuserror {
+        use super::super::CorpusError;
+
+        #[test]
+        fn test_no_home_dir() {
+            let error = CorpusError::NoHomeDir;
+            let debug = format!("{:?}", error);
+            assert_eq!(debug, r#"NoHomeDir"#);
+        }
+    }
+
     mod path {
         use std::path::PathBuf;
 
@@ -37,6 +51,27 @@ mod tests {
             let result = corpus.path();
 
             assert_eq!(result, PathBuf::from("/foo"));
+        }
+
+        #[test]
+        #[cfg(feature = "home")]
+        fn test_at_current_path() -> Result<(), crate::CorpusError> {
+            let home = dirs_next::home_dir().ok_or(crate::CorpusError::NoHomeDir)?;
+            let current_dir =
+                std::env::current_dir().map_err(|_| crate::CorpusError::InvalidCurrentDir)?;
+            let relative_current = current_dir
+                .strip_prefix(home.clone())
+                .unwrap_or(&current_dir);
+
+            let corpus = builder()
+                .with_root("/wat")
+                .relative_to(home)
+                .at_current_path()?
+                .build()?;
+            let result = corpus.path();
+
+            assert_eq!(result, PathBuf::from("/wat").join(relative_current));
+            Ok(())
         }
 
         #[test]

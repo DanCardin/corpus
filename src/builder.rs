@@ -29,8 +29,8 @@ impl CorpusBuilder {
     }
 
     #[cfg(feature = "home")]
-    pub fn relative_to_home(self) -> Result<Self, etcetera::HomeDirError> {
-        let home_dir = etcetera::home_dir()?;
+    pub fn relative_to_home(self) -> Result<Self, CorpusError> {
+        let home_dir = dirs_next::home_dir().ok_or(CorpusError::NoHomeDir)?;
         Ok(self.relative_to(home_dir))
     }
 
@@ -39,8 +39,9 @@ impl CorpusBuilder {
         self
     }
 
-    pub fn at_current_path(self) -> std::io::Result<Self> {
-        Ok(self.at_path(env::current_dir()?))
+    pub fn at_current_path(self) -> Result<Self, CorpusError> {
+        let current_dir = env::current_dir().map_err(|_| CorpusError::InvalidCurrentDir)?;
+        Ok(self.at_path(current_dir))
     }
 
     pub fn with_root<R: Into<RootLocation>>(mut self, root: R) -> Self {

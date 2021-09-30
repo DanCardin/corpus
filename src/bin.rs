@@ -71,13 +71,11 @@ fn main() -> anyhow::Result<()> {
     let corpus = builder.build()?;
 
     let mut result = if opts.nearest {
-        let ancestor = corpus
+        corpus
             .find_nearest()
-            .unwrap_or_else(|| Path::new("").to_path_buf());
-        ancestor
+            .unwrap_or_else(|| Path::new("").to_path_buf())
     } else {
-        let path = corpus.path();
-        path
+        corpus.path()
     };
 
     if opts.source_path {
@@ -92,7 +90,7 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn create_result(create_as: CreateAs, path: &PathBuf) -> std::io::Result<()> {
+fn create_result(create_as: CreateAs, path: &Path) -> std::io::Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }

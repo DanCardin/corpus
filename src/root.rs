@@ -1,7 +1,7 @@
 use crate::CorpusError;
 use std::path::PathBuf;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum RootLocation {
     #[cfg(feature = "xdg")]
     XDGData,
@@ -58,5 +58,48 @@ impl From<&str> for RootLocation {
 impl From<String> for RootLocation {
     fn from(s: String) -> Self {
         Self::from(s.as_ref())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::RootLocation;
+
+    #[test]
+    fn test_debug() {
+        let root = RootLocation::from("path");
+        let debug = format!("{:?}", root);
+        assert_eq!(debug, r#"Raw("path")"#);
+    }
+
+    mod from_str {
+        use super::super::RootLocation;
+
+        #[test]
+        fn test_raw() {
+            let root = RootLocation::from("path");
+            assert_eq!(root, RootLocation::Raw("path".into()));
+        }
+
+        #[test]
+        #[cfg(feature = "xdg")]
+        fn test_xdg_data() {
+            let root = RootLocation::from("xdg-data");
+            assert_eq!(root, RootLocation::XDGData);
+        }
+
+        #[test]
+        #[cfg(feature = "xdg")]
+        fn test_xdg_config() {
+            let root = RootLocation::from("xdg-config");
+            assert_eq!(root, RootLocation::XDGConfig);
+        }
+
+        #[test]
+        #[cfg(feature = "xdg")]
+        fn test_xdg_cache() {
+            let root = RootLocation::from("xdg-cache");
+            assert_eq!(root, RootLocation::XDGCache);
+        }
     }
 }
