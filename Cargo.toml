@@ -2,6 +2,20 @@
 name = "corpus"
 version = "0.1.0"
 edition = "2018"
+authors = ["Dan Cardin <ddcardin@gmail.com>"]
+description = "Centrally Organized, Relative Path Uniqueness Strategy"
+documentation = "https://github.com/DanCardin/corpus"
+homepage = "https://github.com/DanCardin/corpus"
+repository = "https://github.com/DanCardin/corpus"
+readme = "README.md"
+keywords = [
+    "central",
+    "path",
+    "relative",
+]
+categories = ["command-line-utilities", "configuration"]
+license = "Apache-2.0"
+
 
 [features]
 home = ["dirs-next"]
