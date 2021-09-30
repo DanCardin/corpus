@@ -13,7 +13,7 @@ keywords = [
     "path",
     "relative",
 ]
-categories = ["command-line-utilities", "configuration"]
+categories = ["command-line-utilities"]
 license = "Apache-2.0"
 
 

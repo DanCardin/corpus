@@ -55,18 +55,6 @@ configuration with using to avoid committing data/secrets specific to you.
 
 ## How
 
-### (CLI) Installation
-
-``` bash
-#### With Cargo
-
-- `cargo install corpus --features=binary`
-
-#### Download Release
-
-- Download a pre-built binary from [Releases](https://github.com/DanCardin/corpus/releases)
-```
-
 The `corpus` CLI command can be used to interactively determine paths. This can commonly be used to
 adapt (appropriately configurable) tools to use this strategy themselves!
 
@@ -87,6 +75,18 @@ $ # Get corresponding real path, given a data path
 $ corpus --kind xdg-data --source-path --path ~/.local/share/x/y
 ~/x/y
 ```
+
+### (CLI) Installation
+
+#### With Cargo
+
+``` bash
+cargo install corpus --features=binary
+```
+
+#### Download Release
+
+- Download a pre-built binary from [Releases](https://github.com/DanCardin/corpus/releases)
 
 ### For example, central `git`
 
