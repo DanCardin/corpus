@@ -33,7 +33,6 @@ impl RootLocation {
                 };
                 Ok(path)
             }
-            #[cfg(feature = "xdg")]
             Self::Raw(path) => Ok(path.to_path_buf()),
         }
     }
@@ -42,9 +41,15 @@ impl RootLocation {
 impl From<&str> for RootLocation {
     fn from(s: &str) -> Self {
         match s {
+            #[cfg(feature = "xdg")]
             "xdg-data" => Self::XDGData,
+
+            #[cfg(feature = "xdg")]
             "xdg-config" => Self::XDGConfig,
+
+            #[cfg(feature = "xdg")]
             "xdg-cache" => Self::XDGCache,
+
             raw => Self::Raw(PathBuf::from(raw)),
         }
     }

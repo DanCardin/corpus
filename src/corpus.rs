@@ -28,8 +28,8 @@ impl Corpus {
         let path = self
             .path
             .absolutize()
-            .and_then(|p| Ok(p.to_path_buf()))
-            .unwrap_or(self.path.clone());
+            .map(|p| p.to_path_buf())
+            .unwrap_or_else(|_| self.path.clone());
 
         let relative_path = path.strip_prefix(&self.relative_path).unwrap_or(&path);
 
@@ -71,7 +71,6 @@ impl Corpus {
         self.ancestors()
             .filter(|p| p.strip_prefix(&self.root_location).is_ok())
             .find(|p| p.exists())
-            .map(|p| p.to_path_buf())
     }
 
     pub fn get_source_path<P: Into<PathBuf>>(&self, path: P) -> Option<PathBuf> {
