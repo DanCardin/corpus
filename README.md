@@ -50,10 +50,10 @@ location: `~/.local/share/sauce`. For `direnv` (if you configured it as such), i
 `~/.local/share/direnv`. In my book, that beats combing through all potential locations you might
 have placed some config/secrets.
 
-It also means you dont have to pollute your version control (if you're using one) ignore
+It also means you dont have to pollute your version control (if you're using one) to ignore
 configuration with using to avoid committing data/secrets specific to you.
 
-## How
+## CLI
 
 The `corpus` CLI command can be used to interactively determine paths. This can commonly be used to
 adapt (appropriately configurable) tools to use this strategy themselves!
@@ -76,7 +76,7 @@ $ corpus --kind xdg-data --source-path --path ~/.local/share/x/y
 ~/x/y
 ```
 
-### (CLI) Installation
+### Installation
 
 #### With Cargo
 
@@ -88,7 +88,29 @@ cargo install corpus --features=binary
 
 - Download a pre-built binary from [Releases](https://github.com/DanCardin/corpus/releases)
 
-### For example, central `git`
+### Examples
+
+#### Central `venv`
+
+``` bash
+function venv() {
+  VENV_DIR=$(corpus --kind xdg-data --name venv)
+  if [ ! -d "$VENV_DIR" ]; then
+    python -m venv "$VENV_DIR"
+  fi
+  source "$VENV_DIR/bin/activate"
+}
+
+# At ~/projects/foo
+venv
+# Creates ~/.local/share/venv/projects/foo
+
+# At ~/projects/project/subproject
+venv
+# Creates ~/.local/share/venv/projects/project/subprocess
+```
+
+#### Central `git`
 
 Git allows you to set two environment variables: `GIT_DIR` (the `.git` directory), and
 `GIT_WORK_TREE` (the location of the root of the repo).
@@ -101,14 +123,14 @@ export GIT_DIR=$(corpus --nearest -n git -e git)
 export GIT_WORK_TREE=$(corpus --nearest --source-path -n git -e git)
 ```
 
-- for `GIT_DIR`, we want `--nearest` so that, if you `cd` into a child directory it will pick up the
-  file corresponding with the closest existing git repo.
+- for `GIT_DIR`, we want `--nearest` so that, if you `cd` into a child directory it will pick up
+- the file corresponding with the closest existing git repo.
 - for `GIT_WORK_TREE`, we also use `--source-path` to back-trace the repo root location, given the
   data's location
 
 By itself this isn't bulletproof, since `git init` and `git clone` will exhibit some odd behavior if
-you just stuck this in your bashrc/zshrc, but a little creative shell scripting or aliases should
-get the job done!
+you just stuck this in your bashrc/zshrc, but a little creative shell scripting (PRs welcome!) or
+aliases should get the job done!
 
 ## Library
 
@@ -121,12 +143,14 @@ use corpus::{builder, RootLocation};
 let corpus = builder()
     .with_root("/home/.config")
     .relative_to("/home")
-    .at_path("/home/foo/bar")
     .with_name("project")
     .with_extension("toml")
     .build()
     .unwrap();
 
-let result = corpus.path();
+let result = corpus.path("/home/foo/bar");
 assert_eq!(result, PathBuf::from("/home/.config/project/foo/bar.toml"));
 ```
+
+Again [Sauce](https://github.com/DanCardin/sauce) makes use of this pattern (and library) to use
+this strategy for its data files!

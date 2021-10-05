@@ -61,21 +61,16 @@ fn main() -> anyhow::Result<()> {
         builder = builder.with_extension(ext);
     }
 
-    builder = if let Some(p) = opts.path {
-        let path = p.absolutize()?.to_path_buf();
-        builder.at_path(path)
-    } else {
-        builder.at_current_path()?
-    };
-
     let corpus = builder.build()?;
+
+    let path = opts.path.map(|p| p.absolutize().unwrap().to_path_buf());
 
     let mut result = if opts.nearest {
         corpus
-            .find_nearest()
+            .find_nearest(path.as_deref())
             .unwrap_or_else(|| Path::new("").to_path_buf())
     } else {
-        corpus.path()
+        corpus.path(path.as_deref())
     };
 
     if opts.source_path {
