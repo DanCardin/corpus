@@ -2,6 +2,7 @@ use path_absolutize::Absolutize;
 
 use std::path::{Path, PathBuf};
 
+#[derive(Debug)]
 pub enum MaybePath<'a> {
     Path(&'a Path),
     CurrentDir,
@@ -43,9 +44,9 @@ impl<'a> MaybePath<'a> {
 
 #[derive(Debug)]
 pub struct Corpus {
-    root_location: PathBuf,
-    relative_path: PathBuf,
-    extension: Option<String>,
+    pub root_location: PathBuf,
+    pub relative_path: PathBuf,
+    pub extension: Option<String>,
 }
 
 impl Corpus {
@@ -108,22 +109,11 @@ impl Corpus {
         abs_path
     }
 
-    fn ancestors<'a, I: Into<MaybePath<'a>>>(&self, input: I) -> impl Iterator<Item = PathBuf> {
+    /// Returns the set of parent "corpus" directories which are upstream of the `input` Path.
+    pub fn ancestors<'a, I: Into<MaybePath<'a>>>(&self, input: I) -> impl Iterator<Item = PathBuf> {
         self.path(input)
             .ancestors()
-            .filter(|p| {
-                let qualified_root = if let Some(ext) = &self.extension {
-                    self.root_location.with_extension(ext)
-                } else {
-                    self.root_location.clone()
-                };
-
-                if qualified_root == *p {
-                    true
-                } else {
-                    p.strip_prefix(&self.root_location).is_ok()
-                }
-            })
+            .filter(|p| self.is_ancestor(*p))
             .map(|p| {
                 if let Some(ext) = &self.extension {
                     p.with_extension(ext)
@@ -182,5 +172,16 @@ impl Corpus {
             .absolutize()
             .map(|p| p.to_path_buf())
             .ok()
+    }
+
+    /// Returns `true` if the input `path` is relative to the "root".
+    pub fn is_ancestor<'a, P: Into<&'a Path>>(&self, path: P) -> bool {
+        let path = path.into();
+        if let Some(ext) = &self.extension {
+            if self.root_location.with_extension(ext) == path {
+                return true;
+            }
+        }
+        return path.strip_prefix(&self.root_location).is_ok();
     }
 }
