@@ -91,3 +91,45 @@ impl CorpusBuilder {
         Ok(Corpus::new(root_location, relative_path, self.extension))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use super::CorpusBuilder;
+
+    #[test]
+    fn test_build_relative_to() {
+        let corpus = CorpusBuilder::default()
+            .relative_to("/home")
+            .with_root("/config")
+            .with_name("foo")
+            .with_extension("txt")
+            .build()
+            .unwrap();
+
+        assert_eq!(corpus.root_location, PathBuf::from("/config/foo"));
+        assert_eq!(corpus.relative_path, PathBuf::from("/home"));
+        assert_eq!(corpus.extension, Some("txt".to_string()));
+    }
+
+    #[test]
+    #[cfg(feature = "home")]
+    fn test_build_relative_to_home() {
+        let corpus = CorpusBuilder::default()
+            .relative_to_home()
+            .unwrap()
+            .with_root("/config")
+            .with_name("foo")
+            .with_extension("txt")
+            .build()
+            .unwrap();
+
+        assert_eq!(corpus.root_location, PathBuf::from("/config/foo"));
+        assert_eq!(
+            corpus.relative_path,
+            PathBuf::from(dirs_next::home_dir().unwrap())
+        );
+        assert_eq!(corpus.extension, Some("txt".to_string()));
+    }
+}

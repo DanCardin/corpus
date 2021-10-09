@@ -2,10 +2,12 @@
 
 mod builder;
 mod corpus;
+mod path;
 mod root;
 
 pub use crate::builder::CorpusBuilder;
-pub use crate::corpus::{Corpus, MaybePath};
+pub use crate::corpus::Corpus;
+pub use crate::path::MaybePath;
 pub use crate::root::RootLocation;
 
 #[derive(thiserror::Error, Debug)]
