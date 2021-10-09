@@ -96,12 +96,32 @@ mod tests {
         assert_eq!(debug, r#"Raw("path")"#);
     }
 
-    mod from_str {
+    mod from {
+        use std::path::{Path, PathBuf};
+
         use super::super::RootLocation;
 
         #[test]
-        fn test_raw() {
+        fn test_raw_str() {
             let root = RootLocation::from("path");
+            assert_eq!(root, RootLocation::Raw("path".into()));
+        }
+
+        #[test]
+        fn test_raw_string() {
+            let root = RootLocation::from(String::from("path"));
+            assert_eq!(root, RootLocation::Raw("path".into()));
+        }
+
+        #[test]
+        fn test_raw_path() {
+            let root = RootLocation::from(Path::new("path"));
+            assert_eq!(root, RootLocation::Raw("path".into()));
+        }
+
+        #[test]
+        fn test_raw_path_buf() {
+            let root = RootLocation::from(PathBuf::from("path"));
             assert_eq!(root, RootLocation::Raw("path".into()));
         }
 
@@ -124,6 +144,41 @@ mod tests {
         fn test_xdg_cache() {
             let root = RootLocation::from("xdg-cache");
             assert_eq!(root, RootLocation::XDGCache);
+        }
+    }
+
+    mod path {
+        use super::super::RootLocation;
+
+        #[test]
+        fn test_raw() {
+            let current_dir = std::env::current_dir().unwrap();
+            let path = RootLocation::from("path").path().unwrap();
+            assert_eq!(path, current_dir.join("path"));
+        }
+
+        #[test]
+        #[cfg(feature = "home")]
+        fn test_xdg_data() {
+            let home = dirs_next::home_dir().unwrap();
+            let path = RootLocation::from("xdg-data").path().unwrap();
+            assert_eq!(path, home.join(".local/share"));
+        }
+
+        #[test]
+        #[cfg(feature = "home")]
+        fn test_xdg_config() {
+            let home = dirs_next::home_dir().unwrap();
+            let path = RootLocation::from("xdg-config").path().unwrap();
+            assert_eq!(path, home.join(".config"));
+        }
+
+        #[test]
+        #[cfg(feature = "home")]
+        fn test_xdg_cache() {
+            let home = dirs_next::home_dir().unwrap();
+            let path = RootLocation::from("xdg-cache").path().unwrap();
+            assert_eq!(path, home.join(".cache"));
         }
     }
 }

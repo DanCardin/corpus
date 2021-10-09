@@ -1,46 +1,7 @@
+use crate::path::MaybePath;
+
 use path_absolutize::Absolutize;
-
 use std::path::{Path, PathBuf};
-
-#[derive(Debug)]
-pub enum MaybePath<'a> {
-    Path(&'a Path),
-    CurrentDir,
-}
-
-impl<'a> From<Option<&'a Path>> for MaybePath<'a> {
-    fn from(maybe_path: Option<&'a Path>) -> Self {
-        if let Some(path) = maybe_path {
-            Self::Path(path)
-        } else {
-            Self::CurrentDir
-        }
-    }
-}
-
-impl<'a> From<&'a Path> for MaybePath<'a> {
-    fn from(path: &'a Path) -> Self {
-        Self::Path(path)
-    }
-}
-
-impl<'a> From<&'a str> for MaybePath<'a> {
-    fn from(path: &'a str) -> Self {
-        Self::Path(Path::new(path))
-    }
-}
-
-impl<'a> MaybePath<'a> {
-    fn to_path_buf(&self) -> PathBuf {
-        match self {
-            Self::Path(path) => path.to_path_buf(),
-            Self::CurrentDir => {
-                let current_dir = std::env::current_dir();
-                current_dir.unwrap_or_else(|_| Path::new(".").to_path_buf())
-            }
-        }
-    }
-}
 
 #[derive(Debug)]
 pub struct Corpus {
@@ -78,7 +39,7 @@ impl Corpus {
     ///
     /// ```
     /// use std::path::{Path, PathBuf};
-    /// use corpus::{builder, RootLocation};
+    /// use corpus::builder;
     ///
     /// let corpus = builder()
     ///     .with_root("/home/.config")
@@ -148,7 +109,7 @@ impl Corpus {
     ///
     /// ```
     /// use std::path::{Path, PathBuf};
-    /// use corpus::{builder, RootLocation};
+    /// use corpus::builder;
     ///
     /// let corpus = builder()
     ///     .with_root("/home/.config")
@@ -163,6 +124,12 @@ impl Corpus {
     ///     .unwrap();
     ///
     /// assert_eq!(path, PathBuf::from("/home/bar/baz"));
+    ///
+    /// let path = corpus
+    ///     .get_source_path("/root/foo/bar/baz.toml")
+    ///     .unwrap();
+    ///
+    /// assert_eq!(path, PathBuf::from("/root/foo/bar/baz"));
     /// ```
     pub fn get_source_path<P: Into<PathBuf>>(&self, path: P) -> Option<PathBuf> {
         let path = path.into();
@@ -175,6 +142,29 @@ impl Corpus {
     }
 
     /// Returns `true` if the input `path` is relative to the "root".
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::path::Path;
+    /// use corpus::builder;
+    ///
+    /// let corpus = builder()
+    ///     .with_root("/.config")
+    ///     .with_name("foo")
+    ///     .with_extension("toml")
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// let path = corpus.is_ancestor(Path::new("/.config/foo/bar/baz.toml"));
+    /// assert_eq!(path, true);
+    ///
+    /// let path = corpus.is_ancestor(Path::new("/.config/other/bar/baz.toml"));
+    /// assert_eq!(path, false);
+    ///
+    /// let path = corpus.is_ancestor(Path::new("/.config/foo.toml"));
+    /// assert_eq!(path, true);
+    /// ```
     pub fn is_ancestor<'a, P: Into<&'a Path>>(&self, path: P) -> bool {
         let path = path.into();
         if let Some(ext) = &self.extension {
