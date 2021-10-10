@@ -14,9 +14,10 @@
 
 ## Introduction
 
-Corpus implements a relatively simple Strategy for the Central Organization of files (usually XDG
-config/data), relative to some root location (usually home), where you need Unique paths (to
-correspond with usually your current directory).
+Corpus implements a relatively simple **S**trategy for the **C**entral **O**rganization of files (usually XDG
+config/data), **R**elative to some root location (usually home), where you need **U**nique **P**aths (to
+correspond with usually your current directory). Basically, the folder structure for your path gets mirrored
+to some alternate place.
 
 The purpose is probably most easily explained using the motivating example project:
 [Sauce](https://github.com/DanCardin/sauce). Sauce (similar to `direnv`) records directory-specific
@@ -33,25 +34,30 @@ would be:
 +------+------+--+--+------+------+--+--+
        |         |         |         |
   XDG_DATA_DIR   |    relative path  |
-              project             extension
+               name              extension
 ```
 
-Comparatively, `~/projects/` would yield `~/.local/share/sauce/projects.toml`, and
-`~/projects/sauce/src` would yield `~/.local/share/sauce/projects/sauce/src.toml`. Essentially the
-idea is to replicate the same local folder structure...but elsewhere!
+Comparatively:
+
+* `~/` -> `~/.local/share/sauce.toml`
+* `~/projects/` -> `~/.local/share/sauce/projects.toml`
+* `~/projects/sauce/src` -> `~/.local/share/sauce/projects/sauce/src.toml`
 
 ## Why?
 
-Why might you want to do this? For many scenarios, you would otherwise littering your folders with a
+Why might you want to do this, in general? For many scenarios, you would otherwise littering your folders with a
 bunch of extraneous (potentially large!) files intermingled with your **actual** files.
 
-For `sauce`, copying the data from one computer to another is as simple as copying the root
-location: `~/.local/share/sauce`. For `direnv` (if you configured it as such), it'd mean copying
-`~/.local/share/direnv`. In my book, that beats combing through all potential locations you might
-have placed some config/secrets.
+With version control, that would mean adding a bunch of gitignore rules. There's no need if the (cache/data/config)
+files aren't actually colocated with your real files.
 
-It also means you dont have to pollute your version control (if you're using one) to ignore
-configuration with using to avoid committing data/secrets specific to you.
+For migrating the data from one computer to another, or auditing the set of data you have, in general: you would
+otherwise have to individually trawl all folders that **might** contain relevant files. When centrally located,
+you can just directly copy the root folder, and/or see the whole tree of existing data.
+
+Practically, (I think) [sauce](https://github.com/DanCardin/sauce/blob/main/doc/comparison.md) benefits greatly
+from this strategy. **If** `direnv` were to adopt this strategy, on top of the above benefits, there'd be no
+security problems resulting in the need for `direnv allow`.
 
 ## CLI
 
@@ -68,11 +74,11 @@ $ corpus --ext toml --kind xdg-data --path <path> -n sauce
 ~/.local/share/<path>.toml
 
 $ # Get the nearest ancestor directory that actually exists
-$ corpus --ext toml --kind xdg-data --nearest -n sauce
+$ corpus --ext toml --kind xdg-data -n sauce --nearest
 ~/.local/share/x/y.toml
 
 $ # Get corresponding real path, given a data path
-$ corpus --kind xdg-data --source-path --path ~/.local/share/x/y
+$ corpus --kind xdg-data --path ~/.local/share/x/y --source-path
 ~/x/y
 ```
 
@@ -113,28 +119,26 @@ venv
 #### Central `git`
 
 Git allows you to set two environment variables: `GIT_DIR` (the `.git` directory), and
-`GIT_WORK_TREE` (the location of the root of the repo).
-
-Therefore you can (relatively simply) adapt `git` to store all `.git/` folders centrally with a
-little creative bash.
+`GIT_WORK_TREE` (the location of the root of the repo). Therefore you can (relatively simply)
+adapt `git` to store all `.git/` folders by setting these variables.
 
 ``` bash
-export GIT_DIR=$(corpus --nearest -n git -e git)
-export GIT_WORK_TREE=$(corpus --nearest --source-path -n git -e git)
+export GIT_DIR=$(corpus -n git -e git --nearest)
+export GIT_WORK_TREE=$(corpus -n git -e git --nearest --source-path)
 ```
 
 - for `GIT_DIR`, we want `--nearest` so that, if you `cd` into a child directory it will pick up
-- the file corresponding with the closest existing git repo.
-- for `GIT_WORK_TREE`, we also use `--source-path` to back-trace the repo root location, given the
+  the file corresponding with the closest existing git repo.
+- for `GIT_WORK_TREE`, we also use `--source-path` to back track to the actual source location, given the
   data's location
 
-By itself this isn't bulletproof, since `git init` and `git clone` will exhibit some odd behavior if
-you just stuck this in your bashrc/zshrc, but a little creative shell scripting (PRs welcome!) or
+(note) The above, by itself, this isn't bulletproof, since `git init` and `git clone` will exhibit some odd
+behavior if you just stuck this in your bashrc/zshrc, but a little creative shell scripting (PRs welcome!) or
 aliases should get the job done!
 
 ## Library
 
-It can also be used as a library, to make use of this strategy when implementing your own tools.
+To make use of this strategy when implementing your own tools, Corpus can be used directly, as a library.
 
 ``` rust
 use std::path::PathBuf;
